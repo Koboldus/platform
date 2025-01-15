@@ -1,7 +1,6 @@
 import argparse
 import xml.etree.ElementTree as ET
 import xml.dom.minidom
-import sys
 
 def pretty_print_xml_to_file(elem, filename):
     # Convert the ElementTree element to a string
@@ -33,16 +32,18 @@ def analyze_grxml(file_path):
             if 'repeat' in child.attrib:
                 print(f"  Found <item> with repeat: {child.attrib['repeat']}")
                 print("  The <item> in question:")
-                print(f'    <{child.tag.split("}")[1]} repeat="{child.attrib['repeat']}">')
-                for c in child:
-                    if 'ruleref' in c.tag:
-                        print(f'      <{c.tag.split("}")[1]} {next(iter(c.attrib))}={c.attrib[next(iter(c.attrib))]}/>')
-                    elif c.attrib != {}:
-                        print(f'      <{c.tag.split("}")[1]} {next(iter(c.attrib))}={c.attrib[next(iter(c.attrib))]}>{c.text}</{c.tag.split("}")[1]}>')
-                    else:
-                        print(f'      <{c.tag.split("}")[1]}>{c.text}</{c.tag.split("}")[1]}>')
-                print(f'    </{child.tag.split("}")[1]}>')
-                #print(f"    Tag: {c.tag.split('}')[1]}; Text: {c.text}; Attributes: {c.attrib}")
+                if len(child):
+                    print(f'    <{child.tag.split("}")[1]} repeat="{child.attrib['repeat']}">')
+                    for c in child:
+                        if 'ruleref' in c.tag:
+                            print(f'      <{c.tag.split("}")[1]} {next(iter(c.attrib))}={c.attrib[next(iter(c.attrib))]}/>')
+                        elif c.attrib != {}:
+                            print(f'      <{c.tag.split("}")[1]} {next(iter(c.attrib))}={c.attrib[next(iter(c.attrib))]}>{c.text}</{c.tag.split("}")[1]}>')
+                        else:
+                            print(f'      <{c.tag.split("}")[1]}>{c.text}</{c.tag.split("}")[1]}>')
+                    print(f'    </{child.tag.split("}")[1]}>')
+                else:
+                    print(f'    <{child.tag.split("}")[1]} repeat="{child.attrib['repeat']}">{child.text}</{child.tag.split("}")[1]}>')
                 repeat_elements.append(child)
     for l in repeat_elements:
         #print(l.attrib['repeat'])
@@ -55,13 +56,17 @@ def analyze_grxml(file_path):
             repeats = l.attrib['repeat']
         repeats = int(repeats)
         item_to_repeat = ET.Element('item')
-        for child in l:
-            #print(child)
-            item_to_repeat.append(child)
-        for child in l:
-            l.remove(child)
-        for child in l:
-            l.remove(child)
+        if len(l):
+            for child in l:
+                #print(child)
+                item_to_repeat.append(child)
+            for child in l:
+                l.remove(child)
+            for child in l:
+                l.remove(child)
+        else:
+            item_to_repeat.text = l.text
+            l.text = ''
         i = 0
         while i < repeats:
             l.append(item_to_repeat)
